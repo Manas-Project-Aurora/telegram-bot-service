@@ -12,6 +12,7 @@ CONFIG_FILE_PATH: Final = SRC_DIR.parent / 'config.toml'
 @dataclass(frozen=True, slots=True)
 class Config:
     telegram_bot_token: str
+    api_base_url: str  # Добавили базовый URL API
 
 
 def load_config_from_file(config_file_path: pathlib.Path = CONFIG_FILE_PATH) -> Config:
@@ -21,4 +22,5 @@ def load_config_from_file(config_file_path: pathlib.Path = CONFIG_FILE_PATH) -> 
 
     return Config(
         telegram_bot_token=config['telegram_bot']['token'],
+        api_base_url=config['api']['base_url'],  # Теперь загружаем API URL
     )
