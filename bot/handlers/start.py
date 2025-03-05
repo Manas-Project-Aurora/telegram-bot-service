@@ -36,3 +36,9 @@ async def show_users(message: Message):
 )
 async def show_users(message: Message):
     await message.answer("Ты нажал на `💼 Новые вакансии`")
+
+@router.message(
+    F.text
+)
+async def echo_message(message: Message):
+    await message.answer(f"Ты написал: {message.text}")
