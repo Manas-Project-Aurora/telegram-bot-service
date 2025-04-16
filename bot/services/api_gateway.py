@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from enums.vacancy_statuses import VacancyStatus
 from models.users import UserPage
-from models.vacancies import VacancyPage
+from models.vacancies import VacancyPage, Vacancy
 from providers.http_client import ApiGatewayHttpClient
 
 
@@ -30,6 +30,11 @@ class ApiGateway:
             query_params["skip"] = skip
         response = await self.http_client.get(url, params=query_params)
         return VacancyPage.model_validate_json(response.text)
+
+    async def get_vacancy_by_id(self, vacancy_id: int) -> Vacancy:
+        url = f"/v1/vacancies/{vacancy_id}/"
+        response = await self.http_client.get(url)
+        return Vacancy.model_validate_json(response.text)
 
     async def reject_vacancy(self, vacancy_id: int) -> None:
         url = f"/v1/vacancies/{vacancy_id}/reject/"
