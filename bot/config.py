@@ -15,9 +15,9 @@ class Config:
     api_base_url: str  # Добавили базовый URL API
 
 
-def load_config_from_file(config_file_path: pathlib.Path = CONFIG_FILE_PATH) -> Config:
+def load_config_from_file() -> Config:
     """Загружает конфигурацию из TOML файла."""
-    config_toml = config_file_path.read_text(encoding='utf-8')
+    config_toml = CONFIG_FILE_PATH.read_text(encoding='utf-8')
     config = tomllib.loads(config_toml)
 
     return Config(

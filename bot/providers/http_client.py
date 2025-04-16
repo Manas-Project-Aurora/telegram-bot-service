@@ -1,18 +1,19 @@
 from typing import NewType
 
 import httpx
+from dishka import Provider, provide, Scope
 
 from config import Config
-
 
 ApiGatewayHttpClient = NewType("ApiGatewayHttpClient", httpx.AsyncClient)
 
 
-async def api_gateway_http_client_provider(
-    config: Config,
-) -> ApiGatewayHttpClient:
-    return ApiGatewayHttpClient(
-        httpx.AsyncClient(
-            base_url=config.api_base_url,
+class HttpClientProvider(Provider):
+    @provide(scope=Scope.REQUEST)
+    async def provide_http_client(
+            self,
+            config: Config,
+    ) -> ApiGatewayHttpClient:
+        return ApiGatewayHttpClient(
+            httpx.AsyncClient(base_url=config.api_base_url)
         )
-    )
