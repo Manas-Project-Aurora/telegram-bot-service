@@ -1,39 +1,28 @@
 import asyncio
 import logging
 import sys
+from typing import Union
+
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from dishka import Provider, Scope, make_async_container
+from dishka import make_async_container, Scope
 from dishka.integrations.aiogram import setup_dishka
 
-from bot.providers.api_gateway import api_gateway_provider
-from bot.services.api_gateway import ApiGateway
 import handlers.start
-from providers.http_client import (
-    ApiGatewayHttpClient,
-    api_gateway_http_client_provider,
-)
-from config import load_config_from_file, Config
+from config import Config
+from providers.api_gateway import ApiGatewayProvider
+from providers.config import ConfigProvider
+from providers.http_client import HttpClientProvider
+from services.api_gateway import ApiGateway
 
 
 async def main() -> None:
-    provider = Provider(scope=Scope.APP)
-    provider.provide(load_config_from_file, provides=Config, scope=Scope.APP)
-
-    provider.provide(
-        api_gateway_http_client_provider,
-        provides=ApiGatewayHttpClient,
-        scope=Scope.REQUEST,
+    container = make_async_container(
+        ConfigProvider(),
+        HttpClientProvider(),
+        ApiGatewayProvider(),
     )
-    provider.provide(
-        api_gateway_provider,
-        provides=ApiGateway,
-        scope=Scope.REQUEST,
-    )
-
-    container = make_async_container(provider)
-
     config = await container.get(Config)
 
     bot = Bot(

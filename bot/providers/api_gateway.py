@@ -1,8 +1,13 @@
-from bot.providers.http_client import ApiGatewayHttpClient
-from bot.services.api_gateway import ApiGateway
+from dishka import Provider, Scope, provide
+
+from providers.http_client import ApiGatewayHttpClient
+from services.api_gateway import ApiGateway
 
 
-def api_gateway_provider(
-    http_client: ApiGatewayHttpClient,
-) -> ApiGateway:
-    return ApiGateway(http_client=http_client)
+class ApiGatewayProvider(Provider):
+    @provide(scope=Scope.REQUEST)
+    def provide_api_gateway(
+            self,
+            http_client: ApiGatewayHttpClient,
+    ) -> ApiGateway:
+        return ApiGateway(http_client=http_client)
