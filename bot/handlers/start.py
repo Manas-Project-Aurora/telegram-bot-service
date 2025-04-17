@@ -9,6 +9,7 @@ from aiogram.types import InlineKeyboardButton
 from typing import Optional
 from aiogram.filters.callback_data import CallbackData
 
+from config import Config
 from services.api_gateway import ApiGateway
 
 router = Router(name='start_command_handler')
@@ -85,30 +86,71 @@ class VacancyRejectCallbackFactory(CallbackData, prefix="vacancy-reject"):
 
 @router.callback_query(VacancyCallbackFactory.filter())
 async def process_vacancy_action(
-        callback: CallbackQuery,
-        callback_data: VacancyCallbackFactory,
-        api_gateway: FromDishka[ApiGateway],
+    callback: CallbackQuery,
+    callback_data: VacancyCallbackFactory,
+    api_gateway: FromDishka[ApiGateway],
 ):
-    vacancy_id = callback_data.vacancy_id
-    vacancy = await api_gateway.get_vacancy_by_id(vacancy_id)
-    keyboard = InlineKeyboardBuilder()
-    keyboard.row(
+    vacancy = await api_gateway.get_vacancy_by_id(callback_data.vacancy_id)
+
+    builder = InlineKeyboardBuilder()
+    builder.row(
         InlineKeyboardButton(
-            text='✅ Одобрить',
+            text="✅ Одобрить",
             callback_data=VacancyApproveCallbackFactory(
                 vacancy_id=vacancy.id
             ).pack()
         ),
         InlineKeyboardButton(
-            text='❌ Отклонить',
+            text="❌ Отклонить",
             callback_data=VacancyRejectCallbackFactory(
                 vacancy_id=vacancy.id
             ).pack()
-        ),
+        )
     )
+
     await callback.message.answer(
-        f'{vacancy.title}\n'
-        f'{vacancy.description[:100]}...\n'
-        f'{vacancy.organization_name}',
-        reply_markup=keyboard.as_markup()
+        f"🏢 {vacancy.organization_name}\n"
+        f"💼 {vacancy.title}\n"
+        f"{vacancy.description[:200]}...\n\n"
+        f"Зарплата: {vacancy.salary_from or '—'} - {vacancy.salary_to or '—'} {vacancy.salary_type.value}",
+        reply_markup=builder.as_markup()
     )
+
+
+@router.callback_query(VacancyApproveCallbackFactory.filter())
+async def approve_vacancy(
+    callback: CallbackQuery,
+    callback_data: VacancyApproveCallbackFactory,
+    api_gateway: FromDishka[ApiGateway],
+    bot: Bot,
+    config: FromDishka[Config],
+):
+    vacancy = await api_gateway.get_vacancy_by_id(callback_data.vacancy_id)
+    await api_gateway.approve_vacancy(vacancy.id)
+
+    await callback.message.edit_text("✅ Вакансия одобрена!")
+
+    tags = f"#org_{vacancy.organization_id} #{vacancy.salary_type.value} #{vacancy.type.value}"
+    link = f"{config.website_base_url}vacancies/{vacancy.id}"
+    salary_str = f"{vacancy.salary_from} – {vacancy.salary_to} KGS" if vacancy.salary_from and vacancy.salary_to else "Зарплата не указана"
+
+    text = (
+        f"🏢 {vacancy.organization_name}: {vacancy.title}\n"
+        f"Тип: {vacancy.type.value.capitalize()}\n"
+        f"<b>{salary_str} в месяц</b>\n"
+        f"Теги: {tags}\n\n"
+        f"Требования, контакты и условия тут:\n"
+        f"{link}\n\n"
+        f"Чат и другие каналы: @yunbae"
+    )
+
+    await bot.send_message(chat_id=config.vacancy_channel_chat_id, text=text, parse_mode="HTML")
+
+
+@router.callback_query(VacancyRejectCallbackFactory.filter())
+async def reject_vacancy(
+    callback: CallbackQuery,
+    callback_data: VacancyRejectCallbackFactory,
+    api_gateway: FromDishka[ApiGateway],
+):
+    await callback.message.edit_text("❌ Вакансия отклонена.")
